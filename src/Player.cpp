@@ -11,6 +11,7 @@ void Player::initialize_portaudio() {
 
 Player::Player() {
 	Player::initialize_portaudio();
+	this->file_info = {};
 }
 
 Player::~Player() {
@@ -20,20 +21,24 @@ Player::~Player() {
 	}
 }
 
-SndfileHandle Player::open_file(char* file_name) {
-	return SndfileHandle(file_name, SFM_READ, paFloat32, 2, SAMPLE_RATE);
+void Player::open_file(char* file_name) {
+	file_info.file = sf_open(file_name, SFM_READ, &file_info.info);
 }
 
-int Player::open_pa_stream(SndfileHandle file) {
+void Player::close_file() {
+	sf_close(this->file_info.file);
+}
+
+int Player::open_pa_stream() {
 	PaError err = Pa_OpenDefaultStream(
 		&this->stream,
 		0,
-		file.channels(),
+		this->file_info.info.channels,
 		paFloat32,
-		file.samplerate(),
+		this->file_info.info.samplerate,
 		FRAMES_PER_BUFFER,
-		reinterpret_cast<PaStreamCallback*>(&(Player::audio_loop)),
-		static_cast<void*>(&file)
+		Player::audio_loop,
+		&this->file_info
 	);
 
 	if (err != paNoError) {
@@ -61,12 +66,13 @@ int Player::start_pa_stream() {
 		std::cerr << Pa_GetErrorText(err) << std::endl;
 		return 1;
 	}
+
 	return 0;
 }
 
-void Player::play_file(char* file) {
-	SndfileHandle file_handle = Player::open_file(file);
-	int open_status = this->open_pa_stream(file);
+void Player::play_file(char* file_path) {
+	Player::open_file(file_path);
+	int open_status = this->open_pa_stream();
 	int start_status = this->start_pa_stream();
 
 	if (open_status != 0 || start_status != 0) {
@@ -83,18 +89,21 @@ void Player::play_file(char* file) {
 
 int Player::audio_loop(
 	const void*,
-	void* output,
-	unsigned long framecount,
+	void* output_buffer,
+	unsigned long frames_per_buffer,
 	const PaStreamCallbackTimeInfo*,
-	PaStreamCallbackFlags*,
-	void* file
+	PaStreamCallbackFlags,
+	void* user_data
 ) {
-	SndfileHandle* file_handle = static_cast<SndfileHandle*>(file);
-	float* output_chanel = static_cast<float*>(output);
-	int float_read = framecount * file_handle->channels();
-	std::fill(output_chanel, output_chanel + float_read, 0.0f);
-	unsigned long num_read = file_handle->readf(output_chanel, float_read);
-	if (num_read < framecount) {
+	Player::FileInfo* file = static_cast<Player::FileInfo*>(user_data);
+	float* output_channel = static_cast<float*>(output_buffer);
+
+	int float_read = frames_per_buffer * file->info.channels;
+	std::fill(output_channel, output_channel + float_read, 0.0f);
+
+	unsigned long num_read = sf_read_float(file->file, output_channel, float_read);
+
+	if (num_read < frames_per_buffer) {
 		return paComplete;
 	}
 
