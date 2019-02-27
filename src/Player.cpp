@@ -11,7 +11,7 @@ void Player::initialize_portaudio() {
 
 Player::Player() {
 	Player::initialize_portaudio();
-	this->file_info = {};
+	this->audio_file = new AudioFile();
 }
 
 Player::~Player() {
@@ -19,26 +19,24 @@ Player::~Player() {
 	if (err != paNoError) {
 		std::cerr << "Error Terminating Portaudio!" << std::endl;
 	}
+	delete this->audio_file;
 }
 
-void Player::open_file(char* file_name) {
-	file_info.file = sf_open(file_name, SFM_READ, &file_info.info);
-}
-
-void Player::close_file() {
-	sf_close(this->file_info.file);
+void Player::load_file(const char* file_name) {
+	delete this->audio_file;
+	this->audio_file = new AudioFile(file_name);
 }
 
 int Player::open_pa_stream() {
 	PaError err = Pa_OpenDefaultStream(
 		&this->stream,
 		0,
-		this->file_info.info.channels,
+		this->audio_file->info.channels,
 		paFloat32,
-		this->file_info.info.samplerate,
+		this->audio_file->info.samplerate,
 		FRAMES_PER_BUFFER,
 		Player::audio_loop,
-		&this->file_info
+		this->audio_file
 	);
 
 	if (err != paNoError) {
@@ -71,7 +69,7 @@ int Player::start_pa_stream() {
 }
 
 void Player::play_file(char* file_path) {
-	Player::open_file(file_path);
+	Player::load_file(file_path);
 	int open_status = this->open_pa_stream();
 	int start_status = this->start_pa_stream();
 
@@ -95,13 +93,13 @@ int Player::audio_loop(
 	PaStreamCallbackFlags,
 	void* user_data
 ) {
-	Player::FileInfo* file = static_cast<Player::FileInfo*>(user_data);
+	AudioFile* audio_file = static_cast<AudioFile*>(user_data);
 	float* output_channel = static_cast<float*>(output_buffer);
 
-	int float_read = frames_per_buffer * file->info.channels;
+	int float_read = frames_per_buffer * audio_file->info.channels;
 	std::fill(output_channel, output_channel + float_read, 0.0f);
 
-	unsigned long num_read = sf_read_float(file->file, output_channel, float_read);
+	unsigned long num_read = audio_file->read(output_channel, float_read);
 
 	if (num_read < frames_per_buffer) {
 		return paComplete;

@@ -1,15 +1,11 @@
-#include "sndfile.h"
 #include "portaudio.h"
+#include "AudioFile.hpp"
 #define FRAMES_PER_BUFFER 256
 #define SAMPLE_RATE 44100
 
 class Player {
-	struct FileInfo {
-		SNDFILE* file;
-		SF_INFO info;
-	} file_info;
-
 	PaStream* stream;
+	AudioFile* audio_file;
 	static void initialize_portaudio();
 	static int audio_loop(
 		const void*,
@@ -19,8 +15,7 @@ class Player {
 		PaStreamCallbackFlags,
 		void*
 	);
-	void open_file(char*);
-	void close_file();
+	void load_file(const char*);
 	int open_pa_stream();
 	int start_pa_stream();
 	void close_pa_stream();
