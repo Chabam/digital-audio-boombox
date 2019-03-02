@@ -6,6 +6,13 @@
 class Player {
 	PaStream* stream;
 	AudioFile* audio_file;
+	enum PLAYER_STATUS {
+		PLAYING,
+		PAUSED,
+		STOPPED
+	};
+	PLAYER_STATUS player_status;
+
 	static void initialize_portaudio();
 	static int audio_loop(
 		const void*,
@@ -15,7 +22,6 @@ class Player {
 		PaStreamCallbackFlags,
 		void*
 	);
-	void load_file(const char*);
 	int open_pa_stream();
 	int start_pa_stream();
 	void close_pa_stream();
@@ -23,5 +29,10 @@ class Player {
 public:
 	Player();
 	~Player();
-	void play_file(char*);
+	void load_file(const char*);
+	void play_pause();
+	void pause();
+	void play();
+	void stop();
+	void start();
 };

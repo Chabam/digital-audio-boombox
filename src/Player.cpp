@@ -11,7 +11,9 @@ void Player::initialize_portaudio() {
 
 Player::Player() {
 	Player::initialize_portaudio();
-	this->audio_file = new AudioFile();
+	this->audio_file = nullptr;
+	this->stream = nullptr;
+	this->player_status = STOPPED;
 }
 
 Player::~Player() {
@@ -23,7 +25,14 @@ Player::~Player() {
 }
 
 void Player::load_file(const char* file_name) {
-	delete this->audio_file;
+	if (this->audio_file != nullptr) {
+		delete this->audio_file;
+	}
+
+	if (this->stream != nullptr) {
+		this->close_pa_stream();
+	}
+
 	this->audio_file = new AudioFile(file_name);
 }
 
@@ -36,7 +45,7 @@ int Player::open_pa_stream() {
 		this->audio_file->info.samplerate,
 		FRAMES_PER_BUFFER,
 		Player::audio_loop,
-		this->audio_file
+		this
 	);
 
 	if (err != paNoError) {
@@ -44,6 +53,12 @@ int Player::open_pa_stream() {
 		std::cerr << Pa_GetErrorText(err) << std::endl;
 		return 1;
 	}
+
+	Pa_SetStreamFinishedCallback(this->stream, static_cast<PaStreamFinishedCallback*>([](void* user_data) {
+		Player* player = static_cast<Player*>(user_data);
+		player->stop();
+	}));
+
 	return 0;
 }
 
@@ -68,21 +83,44 @@ int Player::start_pa_stream() {
 	return 0;
 }
 
-void Player::play_file(char* file_path) {
-	Player::load_file(file_path);
+void Player::play_pause() {
+	if (this->player_status == PLAYING) {
+		this->pause();
+	} else if (this->player_status == PAUSED){
+		this->play();
+	} else {
+		this->start();
+	}
+}
+
+void Player::pause() {
+	this->player_status = PAUSED;
+}
+
+void Player::play() {
+	this->player_status = PLAYING;
+}
+
+void Player::stop() {
+	this->player_status = STOPPED;
+	if (this->audio_file == nullptr) {
+		throw "No file loaded!";
+	}
+	this->audio_file->set_at_begining();
+}
+
+void Player::start() {
+	if (this->audio_file == nullptr) {
+		throw "No file loaded!";
+	}
 	int open_status = this->open_pa_stream();
 	int start_status = this->start_pa_stream();
+	this->player_status = PLAYING;
 
 	if (open_status != 0 || start_status != 0) {
 		this->close_pa_stream();
 		return;
 	}
-
-	while(Pa_IsStreamActive(this->stream)) {
-		Pa_Sleep(100);
-	}
-
-	std::cout << "Done playing!" << std::endl;
 }
 
 int Player::audio_loop(
@@ -93,16 +131,18 @@ int Player::audio_loop(
 	PaStreamCallbackFlags,
 	void* user_data
 ) {
-	AudioFile* audio_file = static_cast<AudioFile*>(user_data);
+	Player* player = static_cast<Player*>(user_data);
 	float* output_channel = static_cast<float*>(output_buffer);
 
-	int float_read = frames_per_buffer * audio_file->info.channels;
+	int float_read = frames_per_buffer * player->audio_file->info.channels;
 	std::fill(output_channel, output_channel + float_read, 0.0f);
 
-	unsigned long num_read = audio_file->read(output_channel, float_read);
+	if (player->player_status == PLAYING) {
+		unsigned long num_read = player->audio_file->read(output_channel, float_read);
 
-	if (num_read < frames_per_buffer) {
-		return paComplete;
+		if (num_read < frames_per_buffer) {
+			return paComplete;
+		}
 	}
 
 	return paContinue;

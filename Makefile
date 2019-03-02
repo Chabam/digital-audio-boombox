@@ -3,7 +3,8 @@ CC = clang
 PORTAUDIO_LIBS = -lrt -lasound -ljack -lpthread -lportaudio -pthread
 SNDFILE_LIBS = -lsndfile
 STD_LIBS = -lstdc++
-LIBS = $(PORTAUDIO_LIBS) $(SNDFILE_LIBS) $(STD_LIBS)
+NCURSES_LIBS = -lncurses
+LIBS = $(PORTAUDIO_LIBS) $(SNDFILE_LIBS) $(STD_LIBS) $(NCURSES_LIBS)
 
 FLAGS = -std=c++14 -g -Wall -Wextra -Werror $(LIBS) -o
 BUILD_DIR = ./bin

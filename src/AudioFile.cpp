@@ -11,3 +11,7 @@ AudioFile::~AudioFile() {
 sf_count_t AudioFile::read(float* output, sf_count_t frames) {
     return sf_read_float(this->file, output, frames);
 }
+
+void AudioFile::set_at_begining() {
+    sf_seek(this->file, 0, SEEK_SET);
+}
