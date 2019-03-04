@@ -15,3 +15,7 @@ sf_count_t AudioFile::read(float* output, sf_count_t frames) {
 void AudioFile::set_at_begining() {
     sf_seek(this->file, 0, SEEK_SET);
 }
+
+double AudioFile::get_duration() {
+    return static_cast<double>(this->info.frames) / this->info.samplerate;
+}

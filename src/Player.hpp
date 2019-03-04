@@ -1,17 +1,19 @@
 #include "portaudio.h"
 #include "AudioFile.hpp"
+#include "sstream"
+#include "string"
 #define FRAMES_PER_BUFFER 256
-#define SAMPLE_RATE 44100
 
 class Player {
 	PaStream* stream;
 	AudioFile* audio_file;
-	enum PLAYER_STATUS {
+	double current_time;
+	enum STATUS {
 		PLAYING,
 		PAUSED,
 		STOPPED
 	};
-	PLAYER_STATUS player_status;
+	Player::STATUS status;
 
 	static void initialize_portaudio();
 	static int audio_loop(
@@ -25,6 +27,7 @@ class Player {
 	int open_pa_stream();
 	int start_pa_stream();
 	void close_pa_stream();
+	static std::string format_duration(long);
 
 public:
 	Player();
@@ -35,4 +38,5 @@ public:
 	void play();
 	void stop();
 	void start();
+	std::string print_info();
 };

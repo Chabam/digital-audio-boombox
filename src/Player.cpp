@@ -13,7 +13,7 @@ Player::Player() {
 	Player::initialize_portaudio();
 	this->audio_file = nullptr;
 	this->stream = nullptr;
-	this->player_status = STOPPED;
+	this->status = STOPPED;
 }
 
 Player::~Player() {
@@ -84,9 +84,9 @@ int Player::start_pa_stream() {
 }
 
 void Player::play_pause() {
-	if (this->player_status == PLAYING) {
+	if (this->status == PLAYING) {
 		this->pause();
-	} else if (this->player_status == PAUSED){
+	} else if (this->status == PAUSED){
 		this->play();
 	} else {
 		this->start();
@@ -94,15 +94,15 @@ void Player::play_pause() {
 }
 
 void Player::pause() {
-	this->player_status = PAUSED;
+	this->status = PAUSED;
 }
 
 void Player::play() {
-	this->player_status = PLAYING;
+	this->status = PLAYING;
 }
 
 void Player::stop() {
-	this->player_status = STOPPED;
+	this->status = STOPPED;
 	if (this->audio_file == nullptr) {
 		throw "No file loaded!";
 	}
@@ -115,7 +115,7 @@ void Player::start() {
 	}
 	int open_status = this->open_pa_stream();
 	int start_status = this->start_pa_stream();
-	this->player_status = PLAYING;
+	this->status = PLAYING;
 
 	if (open_status != 0 || start_status != 0) {
 		this->close_pa_stream();
@@ -132,18 +132,67 @@ int Player::audio_loop(
 	void* user_data
 ) {
 	Player* player = static_cast<Player*>(user_data);
+
 	float* output_channel = static_cast<float*>(output_buffer);
 
 	int float_read = frames_per_buffer * player->audio_file->info.channels;
 	std::fill(output_channel, output_channel + float_read, 0.0f);
 
-	if (player->player_status == PLAYING) {
+	if (player->status == PLAYING) {
+		player->current_time += static_cast<double>(frames_per_buffer) / player->audio_file->info.samplerate;
 		unsigned long num_read = player->audio_file->read(output_channel, float_read);
 
 		if (num_read < frames_per_buffer) {
 			return paComplete;
 		}
+
 	}
 
 	return paContinue;
+}
+
+std::string Player::print_info() {
+	if (this->audio_file == nullptr) {
+		return "No tack selected!";
+	}
+	std::ostringstream output;
+	output << "Status : ";
+	switch (this->status) {
+		case PLAYING:
+			output << "playing" << std::endl;
+			break;
+		case PAUSED:
+			output << "paused" << std::endl;
+			break;
+		case STOPPED:
+			output << "stopped" << std::endl;
+			break;
+	}
+
+	if (this->status != STOPPED) {
+		output << Player::format_duration(this->current_time)
+			<< "/"
+			<< Player::format_duration(this->audio_file->get_duration())
+			<< std::endl;
+	}
+
+	return output.str();
+}
+
+std::string Player::format_duration(long seconds) {
+	std::ostringstream output;
+	int minutes = seconds / 60;
+	int hours = minutes / 60;
+
+	if (hours != 0) {
+		output << hours << "h ";
+	}
+
+	if (minutes != 0) {
+		output << minutes << "m ";
+	}
+
+	output << seconds - (minutes * 60) - (hours * 60 * 60) << "s";
+
+	return output.str();
 }
