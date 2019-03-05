@@ -7,13 +7,12 @@ DAB::DAB(const char* path) {
     this->player = Player();
 
     if (!std::filesystem::is_directory(path)) {
-        auto file = std::filesystem::path(path);
-	    this->player.load_file(path);
-        this->current_path = file.parent_path();
-    } else {
-        this->current_path = std::filesystem::path(path);
-        this->load_directory();
+        std::cerr << "The path is not a valid directory path" << std::endl;
+        std::cerr << "Usage:" << std::endl << "dab DIRECTORY" << std::endl;
+        exit(1);
     }
+
+    this->current_path = std::filesystem::absolute(path);
 
     this->load_directory();
     this->selected_index = 0;

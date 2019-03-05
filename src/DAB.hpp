@@ -6,7 +6,7 @@
 #include "sstream"
 #include <chrono>
 #include <thread>
-#include <signal.h>
+#include "iostream"
 
 class DAB {
     WINDOW* root;

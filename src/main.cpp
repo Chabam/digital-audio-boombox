@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[]) {
 	if (argc != 2) {
-		std::cerr << "Usage:" << std::endl << "dab (DIRECTORY|FILENAME)" << std::endl;
+		std::cerr << "Usage:" << std::endl << "dab DIRECTORY" << std::endl;
 		return 1;
 	}
 
