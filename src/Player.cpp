@@ -25,6 +25,13 @@ Player::~Player() {
 }
 
 void Player::load_file(const char* file_name) {
+	AudioFile* new_audio_file;
+	try {
+		new_audio_file = new AudioFile(file_name);
+	} catch (...) {
+		throw;
+	}
+
 	if (this->audio_file != nullptr) {
 		delete this->audio_file;
 	}
@@ -33,7 +40,8 @@ void Player::load_file(const char* file_name) {
 		this->close_pa_stream();
 	}
 
-	this->audio_file = new AudioFile(file_name);
+	this->audio_file = new_audio_file;
+	this->current_time = 0;
 }
 
 int Player::open_pa_stream() {
@@ -55,8 +63,7 @@ int Player::open_pa_stream() {
 	}
 
 	Pa_SetStreamFinishedCallback(this->stream, static_cast<PaStreamFinishedCallback*>([](void* user_data) {
-		Player* player = static_cast<Player*>(user_data);
-		player->stop();
+		static_cast<Player*>(user_data)->stop();
 	}));
 
 	return 0;
@@ -107,6 +114,7 @@ void Player::stop() {
 		throw "No file loaded!";
 	}
 	this->audio_file->set_at_begining();
+	this->current_time = 0;
 }
 
 void Player::start() {
@@ -123,6 +131,26 @@ void Player::start() {
 	}
 }
 
+void Player::fast_forward() {
+	if (this->audio_file == nullptr) {
+		throw "No file loaded!";
+	}
+
+	if (this->current_time < this->audio_file->get_duration()) {
+		this->current_time += 1;
+	}
+}
+
+void Player::rewind() {
+	if (this->audio_file == nullptr) {
+		throw "No file loaded!";
+	}
+
+	if (this->current_time > 0) {
+		this->current_time -= 1;
+	}
+}
+
 int Player::audio_loop(
 	const void*,
 	void* output_buffer,
@@ -134,6 +162,7 @@ int Player::audio_loop(
 	Player* player = static_cast<Player*>(user_data);
 
 	float* output_channel = static_cast<float*>(output_buffer);
+	sf_seek(player->audio_file->file, player->current_time * player->audio_file->info.samplerate, SEEK_SET);
 
 	int float_read = frames_per_buffer * player->audio_file->info.channels;
 	std::fill(output_channel, output_channel + float_read, 0.0f);
@@ -156,6 +185,7 @@ std::string Player::print_info() {
 		return "No tack selected!";
 	}
 	std::ostringstream output;
+	output << "Currently playing : " << this->audio_file->path << std::endl;
 	output << "Status : ";
 	switch (this->status) {
 		case PLAYING:

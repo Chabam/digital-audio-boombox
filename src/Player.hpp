@@ -38,5 +38,7 @@ public:
 	void play();
 	void stop();
 	void start();
+	void fast_forward();
+	void rewind();
 	std::string print_info();
 };

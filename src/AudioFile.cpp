@@ -1,7 +1,11 @@
 #include "AudioFile.hpp"
 
 AudioFile::AudioFile(const char* file_path) {
+    this->path = file_path;
     this->file = sf_open(file_path, SFM_READ, &this->info);
+    if (this->file == NULL) {
+		throw "INVALID FILE";
+	}
 }
 
 AudioFile::~AudioFile() {
