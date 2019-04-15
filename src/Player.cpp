@@ -25,6 +25,11 @@ Player::~Player() {
 }
 
 void Player::load_file(const char* file_name) {
+	if (this->stream != nullptr) {
+		this->stop();
+		this->close_pa_stream();
+	}
+
 	AudioFile* new_audio_file;
 	try {
 		new_audio_file = new AudioFile(file_name);
@@ -34,10 +39,6 @@ void Player::load_file(const char* file_name) {
 
 	if (this->audio_file != nullptr) {
 		delete this->audio_file;
-	}
-
-	if (this->stream != nullptr) {
-		this->close_pa_stream();
 	}
 
 	this->audio_file = new_audio_file;

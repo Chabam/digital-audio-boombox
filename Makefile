@@ -17,3 +17,9 @@ EXEC = dab
 
 all:
 	$(CC) $(INCLUDE) $(FLAGS) $(BUILD_DIR)/$(EXEC)
+
+clean:
+	rm $(BUILD_DIR)/*
+
+install:
+	cp $(BUILD_DIR)/$(EXEC) /bin
