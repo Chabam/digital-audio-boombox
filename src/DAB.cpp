@@ -46,8 +46,6 @@ void DAB::init_windows() {
 	}
 
 	this->file_explorer = this->init_window(COLS, LINES / 2, 0);
-	scrollok(this->file_explorer, true);
-	wmove(this->file_explorer, 0, 0);
 	this->track_info = this->init_window(COLS, (LINES / 2), (LINES / 2));
 }
 
@@ -80,14 +78,12 @@ void DAB::display() {
 			this->selected_index = this->selected_index == 0
 				? this->selected_index
 				: this->selected_index - 1;
-			wmove(this->file_explorer, this->selected_index, 0);
 			break;
 		}
 		case KEY_DOWN: {
 			this->selected_index = this->selected_index + 1 == this->current_files.size()
 				? this->selected_index
 				: this->selected_index + 1;
-			wmove(this->file_explorer, this->selected_index, 0);
 			break;
 		}
 		case '\n':
@@ -126,14 +122,13 @@ void DAB::display_track() {
 
 void DAB::display_files() {
 	werase(this->file_explorer);
-
 	wattron(this->file_explorer, A_BOLD | COLOR_PAIR(RED_FOREGROUND));
 	wprintw(this->file_explorer, "%s\n", this->current_path.string().c_str());
 	wattroff(this->file_explorer, A_BOLD | COLOR_PAIR(RED_FOREGROUND));
 
 	waddch(this->file_explorer, ACS_VLINE);
 	waddch(this->file_explorer, '\n');
-	for (size_t i = 0; i < this->current_files.size(); ++i) {
+	for (size_t i = this->selected_index; i < this->current_files.size(); ++i) {
 		if (i == this->current_files.size() - 1) {
 			 waddch(this->file_explorer, ACS_LLCORNER);
 		} else {
