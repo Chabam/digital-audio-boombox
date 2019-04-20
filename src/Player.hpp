@@ -27,6 +27,7 @@ class Player {
 	int open_pa_stream();
 	int start_pa_stream();
 	void close_pa_stream();
+	void abort_pa_stream();
 	static std::string format_duration(long);
 
 public:

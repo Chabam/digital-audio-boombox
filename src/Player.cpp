@@ -25,11 +25,6 @@ Player::~Player() {
 }
 
 void Player::load_file(const char* file_name) {
-	if (this->stream != nullptr) {
-		this->stop();
-		this->close_pa_stream();
-	}
-
 	AudioFile* new_audio_file;
 	try {
 		new_audio_file = new AudioFile(file_name);
@@ -37,12 +32,16 @@ void Player::load_file(const char* file_name) {
 		throw;
 	}
 
-	if (this->audio_file != nullptr) {
+	if (this->status != STOPPED) {
+		this->abort_pa_stream();
 		delete this->audio_file;
+
 	}
 
 	this->audio_file = new_audio_file;
 	this->current_time = 0;
+
+	this->start();
 }
 
 int Player::open_pa_stream() {
@@ -68,6 +67,15 @@ int Player::open_pa_stream() {
 	}));
 
 	return 0;
+}
+
+void Player::abort_pa_stream() {
+	PaError err = Pa_AbortStream(this->stream);
+
+	if (err != paNoError) {
+		std::cerr << "Error aborting the Portaudio stream:" << std::endl;
+		std::cerr << Pa_GetErrorText(err) << std::endl;
+	}
 }
 
 void Player::close_pa_stream() {
