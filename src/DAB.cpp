@@ -6,13 +6,13 @@
 DAB::DAB(const char* path) {
 	this->player = Player();
 
-	if (!std::filesystem::is_directory(path)) {
+	if (!std::experimental::filesystem::is_directory(path)) {
 		std::cerr << "The path is not a valid directory path" << std::endl;
 		std::cerr << "Usage:" << std::endl << "dab DIRECTORY" << std::endl;
 		exit(1);
 	}
 
-	this->current_path = std::filesystem::absolute(path);
+	this->current_path = std::experimental::filesystem::absolute(path);
 
 	this->load_directory();
 	this->selected_index = 0;
@@ -148,8 +148,8 @@ void DAB::display_files() {
 }
 
 void DAB::load_directory() {
-	this->current_files = std::vector<std::filesystem::path>();
-	for (const auto & entry : std::filesystem::directory_iterator(this->current_path)) {
+	this->current_files = std::vector<std::experimental::filesystem::path>();
+	for (const auto & entry : std::experimental::filesystem::directory_iterator(this->current_path)) {
 		this->current_files.push_back(entry.path());
 	}
 }
