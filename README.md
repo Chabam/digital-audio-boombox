@@ -9,7 +9,7 @@ Un lecteur audio jouant des fichiers audio à partir du terminal à l'aide des l
 
 Pour installer les dépendances vous n'avez qu'à faire :
 ```
-$ ./install-dependancies.sh
+$ ./install-dependencies.sh
 ```
 
 Ensuite pour utiliser vous faites :
